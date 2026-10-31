@@ -7,7 +7,7 @@ export interface Pixels { data: Uint8ClampedArray; width: number; height: number
  * « couleur » : image intacte.
  * « document » : fond blanc et texte noir, ombres et papier jauni supprimés.
  *   1. luminance ; 2. fond estimé par un maximum glissant (efface le texte) puis un flou boîte ;
- *   3. division par le fond ; 4. étirement du contraste entre les centiles 2 % et 98 %.
+ *   3. division par le fond ; 4. étirement du contraste entre le centile 2 % et la médiane (le papier).
  */
 export function appliquerFiltre(img: Pixels, filtre: Filtre): Pixels {
   if (filtre === 'couleur') return img;
@@ -22,7 +22,8 @@ export function appliquerFiltre(img: Pixels, filtre: Filtre): Pixels {
   const v = new Float32Array(n);
   for (let i = 0; i < n; i++) v[i] = Math.min(255, (255 * gris[i]) / Math.max(fond[i], 1));
 
-  const [bas, haut] = centiles(v, 0.02, 0.98);
+  // Haut = médiane : le papier occupe l'essentiel du ticket, tout ce qui est au moins aussi clair devient blanc.
+  const [bas, haut] = centiles(v, 0.02, 0.5);
   const echelle = haut > bas ? 255 / (haut - bas) : 1;
   const sortie = new Uint8ClampedArray(n * 4);
   for (let i = 0; i < n; i++) {
