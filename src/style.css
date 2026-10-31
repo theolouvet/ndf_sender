@@ -61,7 +61,8 @@ button:disabled { opacity: .4; cursor: default; }
 .lien.danger { color: var(--danger); }
 
 .barre-bas { position: fixed; left: 0; right: 0; bottom: 0; z-index: 2; background: var(--carte); border-top: 1px solid var(--bord); padding: 10px 12px max(14px, env(safe-area-inset-bottom)); }
-.barre-bas > * { max-width: 616px; margin-left: auto; margin-right: auto; }
+.barre-bas > * { display: block; max-width: 616px; margin-left: auto; margin-right: auto; }
+.barre-bas > .ajouts { display: flex; }
 .ajouts { display: flex; gap: 8px; margin-bottom: 8px; }
 .ajouts .btn { flex: 1; }
 .btn { min-height: 48px; border-radius: 12px; border: 0; background: var(--neutre); font-weight: 600; font-size: .95rem; padding: 0 12px; }
@@ -79,3 +80,23 @@ button:disabled { opacity: .4; cursor: default; }
 .dialogue .actions { display: flex; gap: 8px; justify-content: flex-end; }
 
 .toast { position: fixed; left: 50%; bottom: 180px; transform: translateX(-50%); z-index: 10; max-width: 90vw; background: var(--texte); color: var(--fond); padding: 10px 16px; border-radius: 10px; font-size: .9rem; }
+
+.ajout { flex: 1; padding: 12px 12px 170px; display: flex; flex-direction: column; gap: 10px; }
+.zone-scan { display: flex; justify-content: center; background: #111; border-radius: 12px; padding: 18px; touch-action: none; }
+.editeur { position: relative; display: inline-block; line-height: 0; }
+.editeur-image, .apercu { display: block; max-width: 100%; max-height: 52dvh; user-select: none; }
+.apercu { background: #fff; }
+.editeur-trace { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+.editeur-trace polygon { fill: rgba(61, 220, 151, .14); stroke: #3ddc97; stroke-width: 3; vector-effect: non-scaling-stroke; }
+.poignee { position: absolute; width: 44px; height: 44px; margin: -22px 0 0 -22px; border-radius: 50%; touch-action: none; cursor: grab; }
+.poignee::after { content: ''; position: absolute; inset: 9px; border-radius: 50%; border: 3px solid #3ddc97; background: rgba(61, 220, 151, .3); box-shadow: 0 0 0 2px rgba(0, 0, 0, .35); }
+.poignee.active::after { inset: 4px; background: rgba(61, 220, 151, .5); }
+.statut { margin: 0; min-height: 1.2em; text-align: center; font-size: .85rem; color: var(--doux); }
+.outils { display: flex; gap: 8px; align-items: stretch; }
+.outils > .btn { flex: none; }
+.segments { flex: 1; display: flex; background: var(--neutre); border-radius: 12px; padding: 3px; }
+.segment { flex: 1; border: 0; background: none; border-radius: 10px; font-weight: 600; min-height: 42px; }
+.segment.actif, .btn.actif { background: var(--accent); color: var(--fond); }
+.champ { display: block; width: 100%; min-height: 48px; margin-bottom: 8px; border-radius: 12px; border: 1px solid var(--bord); background: var(--fond); color: var(--texte); font: inherit; padding: 0 14px; }
+.fichier-pdf { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 32px; word-break: break-all; text-align: center; }
+.vignette.grande { width: 96px; height: 124px; font-size: 1.1rem; }

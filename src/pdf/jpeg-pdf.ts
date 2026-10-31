@@ -5,7 +5,7 @@ const LARGEUR_A4 = 595; // points
  * La page garde la largeur d'un A4 et prend la hauteur proportionnelle à l'image.
  * Le JPEG doit avoir 3 composantes (c'est toujours le cas avec canvas.toBlob).
  */
-export function jpegVersPdf(jpeg: Uint8Array, largeurPx: number, hauteurPx: number): Uint8Array {
+export function jpegVersPdf(jpeg: Uint8Array, largeurPx: number, hauteurPx: number): Uint8Array<ArrayBuffer> {
   const l = LARGEUR_A4;
   const h = Math.round((LARGEUR_A4 * hauteurPx) / largeurPx);
   const contenu = `q ${l} 0 0 ${h} 0 0 cm /Im0 Do Q`;
