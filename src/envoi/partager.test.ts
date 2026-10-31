@@ -55,3 +55,20 @@ describe('partager', () => {
     expect(recu).toEqual({ title: 'o', text: 'c', files: envoi.fichiers });
   });
 });
+
+describe('suivi des parties', () => {
+  it('ne déclare le mois envoyé qu\'une fois toutes les parties parties', async () => {
+    const { suivreParties } = await import('./partager');
+    const suivi = suivreParties(2);
+    expect(suivi.marquer(0)).toBe(false);
+    expect(suivi.marquer(0)).toBe(false);
+    expect(suivi.marquer(1)).toBe(true);
+  });
+});
+
+describe('envoi trop lourd', () => {
+  it('signale une partie qui dépasse la limite même seule', () => {
+    const envois = preparerEnvois('2026-10', [element(1, 10), element(2, 30 * Mo)], maintenant, () => true);
+    expect(envois.map((e) => e.tropLourd)).toEqual([false, true]);
+  });
+});

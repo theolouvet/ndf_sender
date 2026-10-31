@@ -108,3 +108,4 @@ button:disabled { opacity: .4; cursor: default; }
 .actions-detail { display: flex; gap: 8px; margin-top: 8px; }
 .actions-detail .btn { flex: 1; }
 a.btn { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+.alerte-texte { color: var(--alerte-texte); }

@@ -14,15 +14,24 @@ export function h<K extends keyof HTMLElementTagNameMap>(tag: K, props: Props = 
   return el;
 }
 
-/** URLs d'objets créées pour l'écran courant, libérées au changement d'écran. */
-const urls: string[] = [];
+/** URLs d'objets : celles de l'écran en construction, puis celles de l'écran affiché (libérées au remplacement). */
+let enConstruction: string[] = [];
+let affichees: string[] = [];
 export function urlObjet(b: Blob): string {
   const u = URL.createObjectURL(b);
-  urls.push(u);
+  enConstruction.push(u);
   return u;
 }
-export function libererUrls(): void {
-  for (const u of urls.splice(0)) URL.revokeObjectURL(u);
+
+/** Remplace l'écran affiché, sauf si un autre écran a été demandé entre-temps. */
+export function afficherEcran(app: HTMLElement, actif: () => boolean, ...noeuds: (Node | null | undefined | false)[]): boolean {
+  if (!actif()) return false;
+  for (const u of affichees) URL.revokeObjectURL(u);
+  affichees = enConstruction;
+  enConstruction = [];
+  app.replaceChildren(...noeuds.filter((n): n is Node => !!n));
+  scrollTo(0, 0);
+  return true;
 }
 
 /** Message bref en bas de l'écran. */

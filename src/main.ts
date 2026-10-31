@@ -3,7 +3,7 @@ import { moisDe } from './domaine/mois';
 import { t } from './i18n';
 import { prechargerOpenCV } from './scan/opencv';
 import { demanderPersistance } from './stockage/db';
-import { libererUrls, toast } from './ui/dom';
+import { toast } from './ui/dom';
 import { lireFichiersPartages } from './partage/reception';
 import { ecranAjout, traiterPartages } from './ui/ecran-ajout';
 import { ecranDetail } from './ui/ecran-detail';
@@ -17,13 +17,11 @@ document.title = t('titre');
 
 const app = document.querySelector<HTMLElement>('#app')!;
 
-async function rendu(r: Route): Promise<void> {
-  libererUrls();
-  scrollTo(0, 0);
+async function rendu(r: Route, actif: () => boolean): Promise<void> {
   try {
-    if (r.ecran === 'mois') await ecranMois(app, r.mois);
-    else if (r.ecran === 'ajout') await ecranAjout(app, r.source, r.fichier, r.idExistant);
-    else await ecranDetail(app, r.id);
+    if (r.ecran === 'mois') await ecranMois(app, r.mois, actif);
+    else if (r.ecran === 'ajout') await ecranAjout(app, r.source, r.fichier, r.idExistant, actif);
+    else await ecranDetail(app, r.id, actif);
   } catch (e) {
     toast(t('erreur', { msg: (e as Error).message }));
   }
@@ -31,9 +29,11 @@ async function rendu(r: Route): Promise<void> {
 
 async function demarrer(): Promise<void> {
   if (!(await demanderPersistance())) signalerPersistanceRefusee();
-  demarrerRouteur(rendu, () => moisDe(new Date()));
   // Ouverture depuis le menu Partager d'Android : le service worker a rangé les fichiers.
-  if (new URLSearchParams(location.search).has('partage')) {
+  // Pas d'écran du mois dans ce cas : il pourrait s'afficher par-dessus l'écran d'ajout.
+  const partage = new URLSearchParams(location.search).has('partage');
+  demarrerRouteur(rendu, () => moisDe(new Date()), !partage);
+  if (partage) {
     history.replaceState(null, '', location.pathname + location.hash);
     traiterPartages(await lireFichiersPartages());
   }

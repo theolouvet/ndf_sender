@@ -1,10 +1,10 @@
 import { libelleMois, moisDe } from '../domaine/mois';
 import type { Element, Source } from '../domaine/types';
-import { partager, preparerEnvois, type Envoi } from '../envoi/partager';
+import { partager, preparerEnvois, suivreParties, type Envoi } from '../envoi/partager';
 import { t } from '../i18n';
 import { elementsDuMois, etatMois, marquerEnvoye, moisAvecElements, viderMois } from '../stockage/db';
 import { confirmer } from './confirmer';
-import { dateLisible, h, tailleLisible, toast, urlObjet } from './dom';
+import { afficherEcran, dateLisible, h, tailleLisible, toast, urlObjet } from './dom';
 import { naviguer } from './routeur';
 
 let persistanceRefusee = false;
@@ -12,7 +12,7 @@ export function signalerPersistanceRefusee(): void {
   persistanceRefusee = true;
 }
 
-export async function ecranMois(app: HTMLElement, mois: string): Promise<void> {
+export async function ecranMois(app: HTMLElement, mois: string, actif: () => boolean = () => true): Promise<void> {
   const [elements, etat, moisConnus] = await Promise.all([elementsDuMois(mois), etatMois(mois), moisAvecElements()]);
   const taille = elements.reduce((s, e) => s + e.pdf.size, 0);
 
@@ -24,7 +24,7 @@ export async function ecranMois(app: HTMLElement, mois: string): Promise<void> {
 
   const nonEnvoyes = etat?.envoyeLe ? elements.filter((e) => !e.envoyeLe).length : 0;
 
-  app.replaceChildren(...[
+  afficherEcran(app, actif, ...[
     h('header', { class: 'entete' },
       h('div', { class: 'titre-mois' },
         h('button', { class: 'fleche', 'aria-label': t('moisPrecedent'), disabled: !plusAncien, on: { click: () => naviguer({ ecran: 'mois', mois: plusAncien }) } }, '‹'),
@@ -45,7 +45,7 @@ export async function ecranMois(app: HTMLElement, mois: string): Promise<void> {
       elements.length > 0 && h('button', { class: 'lien danger', on: { click: () => vider(app, mois, elements.length) } }, t('viderMois')),
     ),
     barreBas(app, mois, elements),
-  ].filter((n): n is HTMLElement => !!n));
+  ]);
 }
 
 function ligne(e: Element, moisEnvoye: boolean): HTMLElement {
@@ -96,6 +96,13 @@ function barreBas(app: HTMLElement, mois: string, elements: Element[]): HTMLElem
 
 async function envoyer(app: HTMLElement, mois: string, elements: Element[], zone: HTMLElement): Promise<void> {
   const envois = preparerEnvois(mois, elements, new Date(), (f) => navigator.canShare?.({ files: f }) ?? false);
+  // Fichier trop lourd pour Gmail : prévenir une fois, le clic suivant envoie quand même.
+  if (envois.some((e) => e.tropLourd) && !zone.dataset.averti) {
+    zone.dataset.averti = '1';
+    zone.prepend(h('p', { class: 'info alerte-texte' }, `⚠ ${t('fichierTropLourd')}`));
+    zone.querySelector('button')!.textContent = t('envoyerQuandMeme');
+    return;
+  }
   if (envois.length === 1) {
     if (await lancer(envois[0])) {
       await marquerEnvoye(mois, new Date());
@@ -104,6 +111,8 @@ async function envoyer(app: HTMLElement, mois: string, elements: Element[], zone
     return;
   }
   // Plusieurs mails : un bouton par partie, car chaque partage exige un geste de l'utilisateur.
+  // Le mois n'est marqué envoyé qu'une fois toutes les parties parties.
+  const suivi = suivreParties(envois.length);
   zone.replaceChildren(
     h('p', { class: 'info' }, t('tropLourd', { total: envois.length })),
     h('div', { class: 'parties' }, ...envois.map((envoi, i) => {
@@ -113,7 +122,11 @@ async function envoyer(app: HTMLElement, mois: string, elements: Element[], zone
           click: async () => {
             if (await lancer(envoi)) {
               b.textContent = `✓ ${i + 1}/${envois.length}`;
-              await marquerEnvoye(mois, new Date());
+              b.disabled = true;
+              if (suivi.marquer(i)) {
+                await marquerEnvoye(mois, new Date());
+                await ecranMois(app, mois);
+              }
             }
           },
         },

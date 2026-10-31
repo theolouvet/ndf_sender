@@ -2,7 +2,13 @@ import { nomFichier } from '../domaine/nommage';
 import type { Element } from '../domaine/types';
 import { construireRecap, corpsMail, decouperEnParties, LIMITE_MAIL, objetMail } from './preparer';
 
-export interface Envoi { objet: string; corps: string; fichiers: File[] }
+export interface Envoi {
+  objet: string;
+  corps: string;
+  fichiers: File[];
+  /** Au-delà de la limite de Gmail (un fichier seul trop gros) : à signaler avant l'envoi. */
+  tropLourd: boolean;
+}
 
 /**
  * Prépare le ou les mails du mois. Chaque partie reçoit le recap complet du mois.
@@ -26,8 +32,21 @@ export function preparerEnvois(
     const partie = parties.length > 1 ? { n: parties.indexOf(fichiers) + 1, total: parties.length } : undefined;
     const noms = new Set(fichiers.map((f) => f.name));
     const recapPartie = { ...recap, elements: recap.elements.filter((e) => noms.has(e.fichier)) };
-    return { objet: objetMail(mois, partie), corps: corpsMail(recapPartie, partie), fichiers: [...fichiers, fichierRecap] };
+    const tous = [...fichiers, fichierRecap];
+    const tropLourd = tous.reduce((t, f) => t + f.size, 0) > LIMITE_MAIL;
+    return { objet: objetMail(mois, partie), corps: corpsMail(recapPartie, partie), fichiers: tous, tropLourd };
   });
+}
+
+/** Suit les parties envoyées : le mois n'est « envoyé » qu'une fois toutes ses parties parties. */
+export function suivreParties(total: number): { marquer(i: number): boolean } {
+  const faites = new Set<number>();
+  return {
+    marquer(i) {
+      faites.add(i);
+      return faites.size === total;
+    },
+  };
 }
 
 /** Ouvre le menu Partager d'Android ; sans partage de fichiers possible, télécharge les fichiers. */

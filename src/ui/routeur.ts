@@ -1,4 +1,5 @@
 import type { Source } from '../domaine/types';
+import { creerJetons, executerDeparts } from './rendu';
 
 export type Route =
   | { ecran: 'mois'; mois: string }
@@ -19,34 +20,38 @@ export function hashVersRoute(hash: string, moisCourant: string): Route {
   return { ecran: 'mois', mois: moisCourant };
 }
 
-type Rendu = (r: Route) => void | Promise<void>;
+/** `actif()` devient faux dès qu'un autre écran est demandé : l'écran lent abandonne alors son affichage. */
+type Rendu = (r: Route, actif: () => boolean) => void | Promise<void>;
 let rendu: Rendu = () => {};
 let courante: Route | null = null;
+const jetons = creerJetons();
 
 /** Lance le routeur : le bouton retour d'Android suit l'historique des hash. */
-export function demarrerRouteur(f: Rendu, moisCourant: () => string): void {
+export function demarrerRouteur(f: Rendu, moisCourant: () => string, afficherTout = true): void {
   rendu = f;
   addEventListener('hashchange', () => {
     // Le retour arrière vers « #/ajout » ne peut pas rouvrir un fichier : on garde la route en mémoire si elle correspond.
     const r = location.hash === '#/ajout' && courante?.ecran === 'ajout' ? courante : hashVersRoute(location.hash, moisCourant());
     afficher(r);
   });
-  afficher(hashVersRoute(location.hash, moisCourant()));
+  if (afficherTout) afficher(hashVersRoute(location.hash, moisCourant()));
 }
 
 function afficher(r: Route): void {
   courante = r;
-  void rendu(r);
+  const actif = jetons.nouveau();
+  // Termine d'abord ce que l'écran quitté doit enregistrer (note en cours de saisie…).
+  void executerDeparts().then(() => actif() && rendu(r, actif));
 }
 
 export function naviguer(r: Route, remplacer = false): void {
   const hash = routeVersHash(r);
   courante = r;
-  if (location.hash === hash) void rendu(r);
+  if (location.hash === hash) afficher(r);
   else if (remplacer) {
     history.replaceState(null, '', hash);
-    void rendu(r);
-  } else location.hash = hash; // déclenche hashchange → rendu
+    afficher(r);
+  } else location.hash = hash; // déclenche hashchange → afficher
 }
 
 export function routeCourante(): Route | null {

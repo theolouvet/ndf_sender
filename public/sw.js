@@ -3,8 +3,19 @@ const CACHE = 'ndf-v1';
 const CACHE_PARTAGE = 'ndf-partage';
 const SOCLE = ['./', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
+// À l'installation : le socle et les fichiers JS/CSS référencés par la page,
+// pour que l'appli s'ouvre hors ligne dès la première visite.
+async function installer() {
+  const cache = await caches.open(CACHE);
+  await cache.addAll(SOCLE);
+  const page = await cache.match('./');
+  const html = page ? await page.text() : '';
+  const assets = [...new Set([...html.matchAll(/assets\/[^"')\s]+/g)].map((m) => `./${m[0]}`))];
+  await cache.addAll(assets);
+}
+
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SOCLE)).then(() => self.skipWaiting()));
+  e.waitUntil(installer().then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (e) => {

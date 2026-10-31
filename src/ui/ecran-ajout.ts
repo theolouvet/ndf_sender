@@ -6,7 +6,7 @@ import { coinsParDefaut } from '../scan/geometrie';
 import { chargerOpenCV, detecterCoins, type CV } from '../scan/opencv';
 import { decoderImage, imageScannee, jpegOriginal, MAX_COTE_ORIGINAL, produireScan, versPixels } from '../scan/pipeline';
 import { ajouterElement, lireElement, modifierElement } from '../stockage/db';
-import { h, toast, urlObjet } from './dom';
+import { afficherEcran, h, toast, urlObjet } from './dom';
 import { creerEditeur } from './editeur-coins';
 import { naviguer } from './routeur';
 
@@ -31,7 +31,9 @@ function suivantOuRetour(mois: string | null): void {
   else naviguer({ ecran: 'mois', mois: moisDe(new Date()) }, true);
 }
 
-export async function ecranAjout(app: HTMLElement, source: Source, fichier: File | undefined, idExistant?: string): Promise<void> {
+export async function ecranAjout(
+  app: HTMLElement, source: Source, fichier: File | undefined, idExistant?: string, actif: () => boolean = () => true,
+): Promise<void> {
   if (!fichier) return suivantOuRetour(null);
   const existant = idExistant ? await lireElement(idExistant) : undefined;
   const rang = totalPartage > 0 ? totalPartage - filePartage.length : 0;
@@ -41,7 +43,7 @@ export async function ecranAjout(app: HTMLElement, source: Source, fichier: File
   const enregistrer = h('button', { class: 'btn principal large' }, t('enregistrer'));
   const corps = h('main', { class: 'ajout' });
 
-  app.replaceChildren(
+  if (!afficherEcran(app, actif,
     h('header', { class: 'entete' },
       h('div', { class: 'titre-mois' },
         h('button', { class: 'fleche', 'aria-label': t('fermer'), on: { click: () => suivantOuRetour(null) } }, '✕'),
@@ -52,7 +54,7 @@ export async function ecranAjout(app: HTMLElement, source: Source, fichier: File
     ),
     corps,
     h('footer', { class: 'barre-bas' }, note, enregistrer),
-  );
+  )) return;
 
   const terminer = async (sauver: () => Promise<{ mois: string }>) => {
     enregistrer.disabled = true;

@@ -3,7 +3,8 @@ import type { Element } from '../domaine/types';
 import { t } from '../i18n';
 import { deplacerVersMois, lireElement, modifierElement, supprimerElement } from '../stockage/db';
 import { confirmer } from './confirmer';
-import { dateLisible, h, toast, urlObjet } from './dom';
+import { afficherEcran, dateLisible, h, toast, urlObjet } from './dom';
+import { enregistrerDepart } from './rendu';
 import { naviguer } from './routeur';
 
 /** Les 12 derniers mois, plus celui de l'élément s'il est plus ancien. */
@@ -13,24 +14,39 @@ function moisProposes(actuel: string): string[] {
   return liste.includes(actuel) ? liste : [actuel, ...liste];
 }
 
-export async function ecranDetail(app: HTMLElement, id: string): Promise<void> {
+export async function ecranDetail(app: HTMLElement, id: string, actif: () => boolean = () => true): Promise<void> {
   const e = await lireElement(id);
   if (!e) return naviguer({ ecran: 'mois', mois: moisDe(new Date()) }, true);
 
   const retour = () => naviguer({ ecran: 'mois', mois: e.mois });
 
   const note = h('input', { class: 'champ', type: 'text', value: e.note, placeholder: t('note'), enterKeyHint: 'done' });
-  note.addEventListener('change', async () => {
-    await modifierElement(e.id, { note: note.value.trim() });
-    toast('✓');
-  });
+  // Enregistrée à la validation, et aussi en quittant l'écran (bouton retour d'Android sans validation).
+  let noteEnregistree = e.note;
+  const enregistrerNote = async () => {
+    const valeur = note.value.trim();
+    if (valeur === noteEnregistree) return;
+    try {
+      await modifierElement(e.id, { note: valeur });
+      noteEnregistree = valeur;
+    } catch (err) {
+      toast(t('erreur', { msg: (err as Error).message }));
+    }
+  };
+  note.addEventListener('change', () => void enregistrerNote());
+  enregistrerDepart(enregistrerNote);
 
   const choixMois = h('select', { class: 'champ' },
     ...moisProposes(e.mois).map((m) => h('option', { value: m, selected: m === e.mois }, libelleMois(m, t.langue))),
   );
   choixMois.addEventListener('change', async () => {
-    const deplace = await deplacerVersMois(e.id, choixMois.value);
-    naviguer({ ecran: 'mois', mois: deplace.mois }, true);
+    try {
+      await enregistrerNote();
+      const deplace = await deplacerVersMois(e.id, choixMois.value);
+      naviguer({ ecran: 'mois', mois: deplace.mois }, true);
+    } catch (err) {
+      toast(t('erreur', { msg: (err as Error).message }));
+    }
   });
 
   const supprimer = async () => {
@@ -39,7 +55,7 @@ export async function ecranDetail(app: HTMLElement, id: string): Promise<void> {
     naviguer({ ecran: 'mois', mois: e.mois }, true);
   };
 
-  app.replaceChildren(
+  afficherEcran(app, actif,
     h('header', { class: 'entete' },
       h('div', { class: 'titre-mois' },
         h('button', { class: 'fleche', 'aria-label': t('fermer'), on: { click: retour } }, '‹'),

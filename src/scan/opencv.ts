@@ -1,8 +1,12 @@
+import urlOpenCV from '@techstark/opencv-js/dist/opencv.js?url';
 import type { Coins } from '../domaine/types';
 import type { Pixels } from './filtre';
 import { MAX_COTE_SCAN, ordonnerCoins, tailleSortie } from './geometrie';
 
 export type CV = typeof import('@techstark/opencv-js');
+
+/** Doit correspondre au nom du cache dans public/sw.js. */
+const CACHE_APPLI = 'ndf-v1';
 
 let chargement: Promise<{ cv: CV }> | null = null;
 
@@ -11,13 +15,14 @@ let chargement: Promise<{ cv: CV }> | null = null;
  * enveloppe mal son export (une promesse), on passe donc par la variable globale `cv` du script UMD.
  */
 async function chargerScript(): Promise<unknown> {
-  const { default: url } = await import('@techstark/opencv-js/dist/opencv.js?url');
   await new Promise<void>((ok, ko) => {
-    const s = Object.assign(document.createElement('script'), { src: url, async: true });
+    const s = Object.assign(document.createElement('script'), { src: urlOpenCV, async: true });
     s.onload = () => ok();
     s.onerror = () => ko(new Error('OpenCV.js indisponible'));
     document.head.append(s);
   });
+  // Première visite : la page n'est pas encore contrôlée par le service worker, on met OpenCV en cache nous-mêmes.
+  if ('caches' in globalThis) void caches.open(CACHE_APPLI).then(async (c) => (await c.match(urlOpenCV)) ?? c.add(urlOpenCV)).catch(() => {});
   return (globalThis as unknown as { cv: unknown }).cv;
 }
 
