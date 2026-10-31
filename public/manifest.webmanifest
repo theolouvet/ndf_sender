@@ -1,8 +1,8 @@
 {
-  "name": "ndf_sender — notes de frais",
-  "short_name": "Notes de frais",
-  "description": "Range les justificatifs de frais du mois et les envoie par mail.",
-  "lang": "fr",
+  "name": "ndf_sender",
+  "short_name": "ndf_sender",
+  "description": "Expense receipts: scan, keep and email them at the end of the month.",
+  "lang": "en",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

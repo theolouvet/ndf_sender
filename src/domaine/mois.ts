@@ -16,12 +16,10 @@ export function isoLocal(d: Date): string {
   );
 }
 
-const NOMS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
-
-/** 'octobre 2026' */
-export function libelleMois(mois: string): string {
-  const [a, m] = mois.split('-');
-  return `${NOMS[Number(m) - 1]} ${a}`;
+/** Libellé du mois dans la langue de l'interface : 'octobre 2026' / 'October 2026'. */
+export function libelleMois(mois: string, langue: 'fr' | 'en' = 'fr'): string {
+  const [a, m] = mois.split('-').map(Number);
+  return new Intl.DateTimeFormat(langue, { month: 'long', year: 'numeric' }).format(new Date(a, m - 1, 1));
 }
 
 /** '14/10/2026' à partir d'une date ISO (date telle qu'écrite, sans conversion de fuseau). */
