@@ -8,7 +8,7 @@ import { decoderImage, imageScannee, jpegOriginal, MAX_COTE_ORIGINAL, produireSc
 import { ajouterElement, lireElement, modifierElement } from '../stockage/db';
 import { afficherEcran, h, toast, urlObjet } from './dom';
 import { creerEditeur } from './editeur-coins';
-import { naviguer } from './routeur';
+import { naviguer, type Route } from './routeur';
 
 /** Fichiers reçus par le menu Partager, traités un par un. */
 let filePartage: { fichier: File; source: Source }[] = [];
@@ -42,8 +42,9 @@ function suivantOuRetour(mois: string | null): void {
 }
 
 export async function ecranAjout(
-  app: HTMLElement, source: Source, fichier: File | undefined, idExistant?: string, actif: () => boolean = () => true,
+  app: HTMLElement, route: Extract<Route, { ecran: 'ajout' }>, actif: () => boolean = () => true,
 ): Promise<void> {
+  const { source, fichier, idExistant, mois: moisCible } = route;
   if (!fichier) return suivantOuRetour(null);
   const existant = idExistant ? await lireElement(idExistant) : undefined;
   const rang = totalPartage > 0 ? totalPartage - filePartage.length : 0;
@@ -82,7 +83,7 @@ export async function ecranAjout(
   if (source === 'pdf') {
     corps.append(h('div', { class: 'fichier-pdf' }, h('div', { class: 'vignette pdf grande' }, 'PDF'), h('p', {}, fichier.name)));
     enregistrer.addEventListener('click', () =>
-      terminer(() => ajouterElement({ source: 'pdf', note: note.value.trim(), pdf: fichier })),
+      terminer(() => ajouterElement({ source: 'pdf', note: note.value.trim(), pdf: fichier }, new Date(), moisCible)),
     );
     return;
   }
@@ -139,7 +140,8 @@ export async function ecranAjout(
       const coins = editeur.coins();
       const { image, pdf } = await produireScan(imageScannee(cv, original, coins, filtre));
       if (existant) return modifierElement(existant.id, { image, pdf, coins, filtre, note: note.value.trim() });
-      return ajouterElement({ source, note: note.value.trim(), pdf, image, original: await jpegOriginal(original), coins, filtre });
+      const orig = await jpegOriginal(original);
+      return ajouterElement({ source, note: note.value.trim(), pdf, image, original: orig, coins, filtre }, new Date(), moisCible);
     }),
   );
 

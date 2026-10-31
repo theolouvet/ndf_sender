@@ -27,3 +27,10 @@ export function dateCourte(iso: string): string {
   const [a, m, j] = iso.slice(0, 10).split('-');
   return `${j}/${m}/${a}`;
 }
+
+/** Mois précédent (sans limite) et suivant (jusqu'au mois courant, null au-delà). */
+export function moisVoisins(mois: string, courant: string): { precedent: string; suivant: string | null } {
+  const [a, m] = mois.split('-').map(Number);
+  const suivant = moisDe(new Date(a, m, 1));
+  return { precedent: moisDe(new Date(a, m - 2, 1)), suivant: suivant <= courant ? suivant : null };
+}

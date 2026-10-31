@@ -50,9 +50,9 @@ ndf_sender remplace ces trois étapes manuelles : les justificatifs sont rangés
 ## Ce qui a été décidé
 
 ### Rattachement à un mois
-- Un élément appartient au mois où il a été ajouté (horodatage d'ajout).
+- Un élément appartient au **mois affiché** au moment de l'ajout (le mois en cours par défaut ; un partage depuis une autre appli va dans le mois en cours). Modifié après les premiers essais de Théo, qui ne pouvait pas aller sur un mois vide.
 - Théo peut changer le mois d'un élément à la main, pour un ticket de fin de mois ajouté le 1er par exemple.
-- L'écran principal affiche le mois en cours, avec une navigation vers les mois précédents qui contiennent des éléments.
+- L'écran principal affiche le mois en cours ; les flèches passent d'un mois à l'autre, sans limite vers le passé et jusqu'au mois en cours vers l'avenir.
 
 ### Après l'envoi
 - Rien n'est supprimé automatiquement. Le mois est marqué « envoyé le JJ/MM » (indicatif, puisque l'app ne peut pas savoir si le mail est vraiment parti) et reste consultable.

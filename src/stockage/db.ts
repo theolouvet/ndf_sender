@@ -27,9 +27,9 @@ export async function fermerDb(): Promise<void> {
   connexion = null;
 }
 
-export async function ajouterElement(e: NouvelElement, maintenant = new Date()): Promise<Element> {
+/** Ajoute un élément au mois indiqué (par défaut celui de la date d'ajout). */
+export async function ajouterElement(e: NouvelElement, maintenant = new Date(), mois = moisDe(maintenant)): Promise<Element> {
   const tx = (await db()).transaction(['elements', 'mois'], 'readwrite');
-  const mois = moisDe(maintenant);
   const etat = (await tx.objectStore('mois').get(mois)) ?? { mois, dernierNumero: 0 };
   etat.dernierNumero += 1;
   const element: Element = { ...e, id: crypto.randomUUID(), mois, numero: etat.dernierNumero, ajouteLe: isoLocal(maintenant) };

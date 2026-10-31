@@ -3,7 +3,8 @@ import { creerJetons, executerDeparts } from './rendu';
 
 export type Route =
   | { ecran: 'mois'; mois: string }
-  | { ecran: 'ajout'; source: Source; fichier?: File; idExistant?: string }
+  /** mois : mois affiché au moment de l'ajout (l'élément y est rangé) ; absent = mois courant. */
+  | { ecran: 'ajout'; source: Source; fichier?: File; idExistant?: string; mois?: string }
   | { ecran: 'detail'; id: string };
 
 export function routeVersHash(r: Route): string {

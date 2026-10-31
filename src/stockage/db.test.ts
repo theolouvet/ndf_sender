@@ -73,3 +73,15 @@ describe('stockage', () => {
     expect((await lireElement(a.id))?.pdf.size).toBe(14);
   });
 });
+
+describe('ajout dans un mois choisi', () => {
+  it('range l\'élément dans le mois affiché, avec le numéro suivant de ce mois', async () => {
+    await fermerDb();
+    globalThis.indexedDB = new IDBFactory();
+    await ajouterElement(nouveau(), le(20, 9));
+    const e = await ajouterElement(nouveau(), le(1, 11), '2026-09');
+    expect(e.mois).toBe('2026-09');
+    expect(e.numero).toBe(2);
+    expect(e.ajouteLe).toBe('2026-11-01T12:00:00+01:00');
+  });
+});

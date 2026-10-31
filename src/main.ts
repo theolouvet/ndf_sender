@@ -20,7 +20,7 @@ const app = document.querySelector<HTMLElement>('#app')!;
 async function rendu(r: Route, actif: () => boolean): Promise<void> {
   try {
     if (r.ecran === 'mois') await ecranMois(app, r.mois, actif);
-    else if (r.ecran === 'ajout') await ecranAjout(app, r.source, r.fichier, r.idExistant, actif);
+    else if (r.ecran === 'ajout') await ecranAjout(app, r, actif);
     else await ecranDetail(app, r.id, actif);
   } catch (e) {
     toast(t('erreur', { msg: (e as Error).message }));

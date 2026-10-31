@@ -16,3 +16,13 @@ describe('mois', () => {
     expect(dateCourte('2026-10-03T12:40:00+02:00')).toBe('03/10/2026');
   });
 });
+
+import { moisVoisins } from './mois';
+
+describe('moisVoisins', () => {
+  it('remonte librement et avance jusqu\'au mois courant', () => {
+    expect(moisVoisins('2026-10', '2026-10')).toEqual({ precedent: '2026-09', suivant: null });
+    expect(moisVoisins('2026-01', '2026-10')).toEqual({ precedent: '2025-12', suivant: '2026-02' });
+    expect(moisVoisins('2025-12', '2026-10')).toEqual({ precedent: '2025-11', suivant: '2026-01' });
+  });
+});

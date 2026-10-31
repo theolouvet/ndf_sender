@@ -1,8 +1,8 @@
-import { libelleMois, moisDe } from '../domaine/mois';
+import { libelleMois, moisDe, moisVoisins } from '../domaine/mois';
 import type { Element, Source } from '../domaine/types';
 import { partager, preparerEnvois, suivreParties, type Envoi } from '../envoi/partager';
 import { t } from '../i18n';
-import { elementsDuMois, etatMois, marquerEnvoye, moisAvecElements, viderMois } from '../stockage/db';
+import { elementsDuMois, etatMois, marquerEnvoye, viderMois } from '../stockage/db';
 import { confirmer } from './confirmer';
 import { afficherEcran, dateLisible, h, tailleLisible, toast, urlObjet } from './dom';
 import { naviguer } from './routeur';
@@ -13,14 +13,11 @@ export function signalerPersistanceRefusee(): void {
 }
 
 export async function ecranMois(app: HTMLElement, mois: string, actif: () => boolean = () => true): Promise<void> {
-  const [elements, etat, moisConnus] = await Promise.all([elementsDuMois(mois), etatMois(mois), moisAvecElements()]);
+  const [elements, etat] = await Promise.all([elementsDuMois(mois), etatMois(mois)]);
   const taille = elements.reduce((s, e) => s + e.pdf.size, 0);
 
-  // Navigation : mois ayant des éléments, plus le mois courant et le mois affiché.
-  const liste = [...new Set([...moisConnus, moisDe(new Date()), mois])].sort().reverse();
-  const i = liste.indexOf(mois);
-  const plusAncien = liste[i + 1];
-  const plusRecent = liste[i - 1];
+  // Navigation mois par mois : librement vers le passé, jusqu'au mois courant vers l'avenir.
+  const { precedent: plusAncien, suivant: plusRecent } = moisVoisins(mois, moisDe(new Date()));
 
   const nonEnvoyes = etat?.envoyeLe ? elements.filter((e) => !e.envoyeLe).length : 0;
 
@@ -29,7 +26,7 @@ export async function ecranMois(app: HTMLElement, mois: string, actif: () => boo
       h('div', { class: 'titre-mois' },
         h('button', { class: 'fleche', 'aria-label': t('moisPrecedent'), disabled: !plusAncien, on: { click: () => naviguer({ ecran: 'mois', mois: plusAncien }) } }, '‹'),
         h('h1', {}, capitaliser(libelleMois(mois, t.langue))),
-        h('button', { class: 'fleche', 'aria-label': t('moisSuivant'), disabled: !plusRecent, on: { click: () => naviguer({ ecran: 'mois', mois: plusRecent }) } }, '›'),
+        h('button', { class: 'fleche', 'aria-label': t('moisSuivant'), disabled: !plusRecent, on: { click: () => plusRecent && naviguer({ ecran: 'mois', mois: plusRecent }) } }, '›'),
       ),
       h('p', { class: 'sous-titre' }, `${t.n('justificatifs', elements.length)} · ${tailleLisible(taille, t.langue)}`),
     ),
@@ -75,7 +72,7 @@ function barreBas(app: HTMLElement, mois: string, elements: Element[]): HTMLElem
       on: {
         change: () => {
           const f = input.files?.[0];
-          if (f) naviguer({ ecran: 'ajout', source, fichier: f });
+          if (f) naviguer({ ecran: 'ajout', source, fichier: f, mois });
         },
       },
     });
