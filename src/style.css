@@ -100,3 +100,11 @@ button:disabled { opacity: .4; cursor: default; }
 .champ { display: block; width: 100%; min-height: 48px; margin-bottom: 8px; border-radius: 12px; border: 1px solid var(--bord); background: var(--fond); color: var(--texte); font: inherit; padding: 0 14px; }
 .fichier-pdf { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 32px; word-break: break-all; text-align: center; }
 .vignette.grande { width: 96px; height: 124px; font-size: 1.1rem; }
+
+.detail { flex: 1; padding: 12px 12px 40px; display: flex; flex-direction: column; gap: 12px; }
+.scan-grand { display: block; width: 100%; max-height: 70dvh; object-fit: contain; background: #fff; border-radius: 8px; border: 1px solid var(--bord); touch-action: pinch-zoom; }
+.ligne { display: flex; flex-direction: column; gap: 4px; font-size: .85rem; color: var(--doux); margin: 0; }
+.ligne .champ { margin: 0; color: var(--texte); font-size: 1rem; }
+.actions-detail { display: flex; gap: 8px; margin-top: 8px; }
+.actions-detail .btn { flex: 1; }
+a.btn { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }

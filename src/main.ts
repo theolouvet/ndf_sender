@@ -6,6 +6,7 @@ import { demanderPersistance } from './stockage/db';
 import { libererUrls, toast } from './ui/dom';
 import { lireFichiersPartages } from './partage/reception';
 import { ecranAjout, traiterPartages } from './ui/ecran-ajout';
+import { ecranDetail } from './ui/ecran-detail';
 import { ecranMois, signalerPersistanceRefusee } from './ui/ecran-mois';
 import { demarrerRouteur, naviguer, type Route } from './ui/routeur';
 
@@ -22,6 +23,7 @@ async function rendu(r: Route): Promise<void> {
   try {
     if (r.ecran === 'mois') await ecranMois(app, r.mois);
     else if (r.ecran === 'ajout') await ecranAjout(app, r.source, r.fichier, r.idExistant);
+    else await ecranDetail(app, r.id);
   } catch (e) {
     toast(t('erreur', { msg: (e as Error).message }));
   }
