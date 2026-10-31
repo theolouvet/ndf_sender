@@ -46,8 +46,14 @@ async function recevoirPartage(req) {
   const cache = await caches.open(CACHE_PARTAGE);
   const horodatage = Date.now();
   const fichiers = donnees.getAll('fichiers').filter((f) => f instanceof File && f.size > 0);
-  // Un lien sans fichier (ex. Google Drive) : l'appli explique comment partager le fichier lui-même.
-  if (fichiers.length === 0) return Response.redirect('./?partage=lien', 303);
+  // Un lien sans fichier : rangé pour que l'appli télécharge le justificatif (jamais dans l'URL, qui part au serveur).
+  if (fichiers.length === 0) {
+    const champs = ['lien', 'texte', 'titre'].map((k) => donnees.get(k)).filter((v) => typeof v === 'string');
+    const lien = champs.map((t) => t.match(/https?:\/\/[^\s<>"']+/)?.[0]).find(Boolean);
+    if (!lien) return Response.redirect('./?partage=lien', 303);
+    await cache.put(`./partage/${horodatage}-lien`, new Response('', { headers: { 'X-Lien': encodeURIComponent(lien) } }));
+    return Response.redirect('./?partage=1', 303);
+  }
   let i = 0;
   for (const f of fichiers) {
     await cache.put(

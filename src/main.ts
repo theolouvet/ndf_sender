@@ -4,7 +4,7 @@ import { t } from './i18n';
 import { prechargerOpenCV } from './scan/opencv';
 import { demanderPersistance } from './stockage/db';
 import { toast } from './ui/dom';
-import { lireFichiersPartages } from './partage/reception';
+import { lirePartages, telechargerLien } from './partage/reception';
 import { ecranAjout, traiterPartages } from './ui/ecran-ajout';
 import { ecranDetail } from './ui/ecran-detail';
 import { ecranMois, signalerPersistanceRefusee } from './ui/ecran-mois';
@@ -39,7 +39,19 @@ async function demarrer(): Promise<void> {
     if (lien) {
       naviguer({ ecran: 'mois', mois: moisDe(new Date()) }, true);
       toast(t('lienRecu'), 9000);
-    } else await traiterPartages(await lireFichiersPartages());
+    } else {
+      const { fichiers, liens } = await lirePartages();
+      for (const lien of liens) {
+        try {
+          toast(t('telechargement'));
+          fichiers.push(await telechargerLien(lien));
+        } catch (e) {
+          toast(t('lienEchec', { msg: (e as Error).message }), 9000);
+        }
+      }
+      if (fichiers.length > 0) await traiterPartages(fichiers);
+      else naviguer({ ecran: 'mois', mois: moisDe(new Date()) }, true);
+    }
   }
   prechargerOpenCV();
 }

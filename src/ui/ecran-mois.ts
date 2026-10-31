@@ -3,7 +3,8 @@ import type { Element, Source } from '../domaine/types';
 import { partager, preparerEnvois, suivreParties, type Envoi } from '../envoi/partager';
 import { t } from '../i18n';
 import { elementsDuMois, etatMois, marquerEnvoye, viderMois } from '../stockage/db';
-import { confirmer } from './confirmer';
+import { confirmer, demanderLien } from './confirmer';
+import { extraireLien, telechargerLien } from '../partage/reception';
 import { afficherEcran, dateLisible, h, tailleLisible, toast, urlObjet } from './dom';
 import { naviguer } from './routeur';
 
@@ -86,9 +87,23 @@ function barreBas(app: HTMLElement, mois: string, elements: Element[]): HTMLElem
       h('button', { class: 'btn principal', on: { click: () => choisir('photo') } }, `📷 ${t('photo')}`),
       h('button', { class: 'btn', on: { click: () => choisir('galerie') } }, `🖼 ${t('galerie')}`),
       h('button', { class: 'btn', on: { click: () => choisir('pdf') } }, `📄 ${t('pdf')}`),
+      h('button', { class: 'btn', on: { click: () => ajouterLien(mois) } }, `🔗 ${t('lien')}`),
     ),
     zoneEnvoi,
   );
+}
+
+async function ajouterLien(mois: string): Promise<void> {
+  const saisie = await demanderLien();
+  const lien = extraireLien(saisie);
+  if (!lien) return;
+  toast(t('telechargement'));
+  try {
+    const f = await telechargerLien(lien);
+    naviguer({ ecran: 'ajout', source: f.type === 'application/pdf' ? 'pdf' : 'galerie', fichier: f, mois });
+  } catch (e) {
+    toast(t('lienEchec', { msg: (e as Error).message }), 9000);
+  }
 }
 
 async function envoyer(app: HTMLElement, mois: string, elements: Element[], zone: HTMLElement): Promise<void> {
