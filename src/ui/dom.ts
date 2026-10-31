@@ -35,10 +35,10 @@ export function afficherEcran(app: HTMLElement, actif: () => boolean, ...noeuds:
 }
 
 /** Message bref en bas de l'écran. */
-export function toast(message: string): void {
+export function toast(message: string, duree = 4000): void {
   const el = h('div', { class: 'toast', role: 'status' }, message);
   document.body.append(el);
-  setTimeout(() => el.remove(), 4000);
+  setTimeout(() => el.remove(), duree);
 }
 
 /** Taille lisible : « 1,2 Mo » / « 1.2 MB ». */

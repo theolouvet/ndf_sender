@@ -1,7 +1,7 @@
 import { moisDe } from '../domaine/mois';
 import type { Coins, Filtre, Source } from '../domaine/types';
 import { t } from '../i18n';
-import { fichierAccepte } from '../partage/reception';
+import { typeFichier } from '../partage/reception';
 import { coinsParDefaut } from '../scan/geometrie';
 import { chargerOpenCV, detecterCoins, type CV } from '../scan/opencv';
 import { decoderImage, imageScannee, jpegOriginal, MAX_COTE_ORIGINAL, produireScan, versPixels } from '../scan/pipeline';
@@ -11,11 +11,18 @@ import { creerEditeur } from './editeur-coins';
 import { naviguer } from './routeur';
 
 /** Fichiers reçus par le menu Partager, traités un par un. */
-let filePartage: File[] = [];
+let filePartage: { fichier: File; source: Source }[] = [];
 let totalPartage = 0;
 
-export function traiterPartages(fichiers: File[]): void {
-  const acceptes = fichiers.filter((f) => fichierAccepte(f));
+export async function traiterPartages(fichiers: File[]): Promise<void> {
+  const types = await Promise.all(fichiers.map((f) => typeFichier(f)));
+  const acceptes = fichiers.flatMap((f, i) => {
+    const type = types[i];
+    if (!type) return [];
+    // Type générique annoncé par l'appli source : on le corrige pour l'envoi.
+    const corrige = type === 'pdf' && f.type !== 'application/pdf' ? new File([f], nomPdf(f.name), { type: 'application/pdf' }) : f;
+    return [{ fichier: corrige, source: type === 'pdf' ? ('pdf' as const) : ('galerie' as const) }];
+  });
   const ignores = fichiers.length - acceptes.length;
   if (ignores > 0) toast(t.n('ignores', ignores));
   filePartage = acceptes;
@@ -23,10 +30,13 @@ export function traiterPartages(fichiers: File[]): void {
   suivantOuRetour(null);
 }
 
+const nomPdf = (nom: string) => (/\.pdf$/i.test(nom) ? nom : `${nom || 'document'}.pdf`);
+
 /** Passe au fichier partagé suivant, ou revient au mois (sans laisser l'ajout dans l'historique). */
 function suivantOuRetour(mois: string | null): void {
-  const f = filePartage.shift();
-  if (f) naviguer({ ecran: 'ajout', source: fichierAccepte(f) === 'pdf' ? 'pdf' : 'galerie', fichier: f }, true);
+  const suivant = filePartage.shift();
+  if (!suivant) totalPartage = 0;
+  if (suivant) naviguer({ ecran: 'ajout', source: suivant.source, fichier: suivant.fichier }, true);
   else if (mois) naviguer({ ecran: 'mois', mois }, true);
   else naviguer({ ecran: 'mois', mois: moisDe(new Date()) }, true);
 }

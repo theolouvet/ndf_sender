@@ -45,9 +45,11 @@ async function recevoirPartage(req) {
   const donnees = await req.formData();
   const cache = await caches.open(CACHE_PARTAGE);
   const horodatage = Date.now();
+  const fichiers = donnees.getAll('fichiers').filter((f) => f instanceof File && f.size > 0);
+  // Un lien sans fichier (ex. Google Drive) : l'appli explique comment partager le fichier lui-même.
+  if (fichiers.length === 0) return Response.redirect('./?partage=lien', 303);
   let i = 0;
-  for (const f of donnees.getAll('fichiers')) {
-    if (!(f instanceof File)) continue;
+  for (const f of fichiers) {
     await cache.put(
       `./partage/${horodatage}-${i++}`,
       new Response(f, { headers: { 'Content-Type': f.type, 'X-Nom': encodeURIComponent(f.name) } }),

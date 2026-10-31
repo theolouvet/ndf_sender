@@ -7,6 +7,22 @@ export function fichierAccepte(f: { type: string; name: string }): 'image' | 'pd
   return null;
 }
 
+/**
+ * Type réel d'un fichier partagé : d'après son type annoncé ou son extension, sinon d'après ses premiers octets
+ * (certaines applis partagent un PDF en « application/octet-stream » ou sans extension).
+ */
+export async function typeFichier(f: Blob & { name: string }): Promise<'image' | 'pdf' | null> {
+  const annonce = fichierAccepte(f);
+  if (annonce) return annonce;
+  const o = new Uint8Array(await f.slice(0, 8).arrayBuffer());
+  const debut = String.fromCharCode(...o);
+  if (debut.startsWith('%PDF')) return 'pdf';
+  if (o[0] === 0xff && o[1] === 0xd8 && o[2] === 0xff) return 'image'; // JPEG
+  if (debut.startsWith('PNG')) return 'image';
+  if (debut.startsWith('RIFF') || debut.startsWith('GIF8')) return 'image'; // WebP, GIF
+  return null;
+}
+
 /** Lit puis vide les fichiers partagés en attente. */
 export async function lireFichiersPartages(): Promise<File[]> {
   if (!('caches' in self)) return [];

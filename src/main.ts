@@ -34,8 +34,12 @@ async function demarrer(): Promise<void> {
   const partage = new URLSearchParams(location.search).has('partage');
   demarrerRouteur(rendu, () => moisDe(new Date()), !partage);
   if (partage) {
+    const lien = new URLSearchParams(location.search).get('partage') === 'lien';
     history.replaceState(null, '', location.pathname + location.hash);
-    traiterPartages(await lireFichiersPartages());
+    if (lien) {
+      naviguer({ ecran: 'mois', mois: moisDe(new Date()) }, true);
+      toast(t('lienRecu'), 9000);
+    } else await traiterPartages(await lireFichiersPartages());
   }
   prechargerOpenCV();
 }
